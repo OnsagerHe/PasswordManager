@@ -35,3 +35,10 @@ python passwordManager.py -d passwords.txt
 ```
 
 ⚠️ Result print in your prompt.
+
+### More information
+
+You can use:
+```
+python passwordManager.py -h
+```
