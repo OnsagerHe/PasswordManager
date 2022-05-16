@@ -57,17 +57,6 @@ class PasswordManager:
             exit("Private key file does not exist!")
         return privateKey
 
-    def getPublicKey(self):
-        try:
-            f = open("publicKey.ecc", "r")
-            try:
-               publicKey = int(f.read())
-            except ValueError:
-                exit("Can't read public key")
-        except IOError:
-            exit("Public key file does not exist!")
-        return publicKey
-
     def getPlaintext(self, fileName):
         try:
             f = open(fileName, "r")
