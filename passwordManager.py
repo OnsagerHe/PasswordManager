@@ -119,8 +119,11 @@ def main(cmd, pathFile):
 
 def help():
     print("Usage: python3 passwordManager.py [OPTION] [FILE]")
-    print("-e or --encrypt to encrypt passwords")
     print("-d or --decrypt to decrypt passwords")
+    print("-e or --encrypt to encrypt passwords")
+    print("-g or --generate to generate private key")
+    print("-h or --help to display help")
+    print("-v or --version to display version")
 
 def version():
     print("Version: 1.0 (Python 3.6.4)")
