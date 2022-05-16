@@ -7,7 +7,7 @@ You can file all documentation to install [Python](https://www.python.org/downlo
 ## Setup
 
 - Create your private key:
-```py
+```sh
 python passwordManager.py -g
 ```
 
@@ -15,21 +15,21 @@ python passwordManager.py -g
 
 ## Usage
 
-```py
+```sh
 
 python passwordManager.py [OPTION] [FILE]
 ```
 
 ### Encrypt file
 
-```py
+```sh
 
 python passwordManager.py -e passwords.txt
 ```
 
 ### Decrypt file
 
-```py
+```sh
 
 python passwordManager.py -d passwords.txt
 ```
