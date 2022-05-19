@@ -197,13 +197,14 @@ def main(cmd, pathFile, pathPrivateKey = ""):
     return 0
 
 def help():
-    print("Usage: python3 passwordManager.py [OPTION] [FILE]")
+    print("Usage: python3 passwordManager.py [OPTION] [FILE]\n")
     print("-d or --decrypt to decrypt passwords")
     print("-e or --encrypt to encrypt passwords")
     print("-g or --generate to generate private key")
     print("-h or --help to display help")
     print("-p or --private-key to set path of private key")
     print("-v or --version to display version")
+    print("\nExample:\n\tpython3 passwordManager.py -e password.txt -p privateKey.ecc\n")
 
 def version():
     print("Version: 1.0 (Python 3.6.4)")
