@@ -1,20 +1,44 @@
 # PasswordManager
 
-## Usage
+## Installation
 
-- Create your private Key:
-```py
+You can file all documentation to install [Python](https://www.python.org/downloads/)
+
+## Setup
+
+- Create your private key:
+```sh
 python passwordManager.py -g
 ```
 
-- Create file with your password
-```sh
-touch passwords.txt
-micro passwords.txt
-```
-Example file [passwords.txt](./passwords.txt)
+- Create your file with your passwords, you can see [passwords.txt](./passwords.txt) example.
 
-- Encrypt your password file:
-```py
+## Usage
+
+```sh
+
+python passwordManager.py [OPTION] [FILE]
+```
+
+### Encrypt file
+
+```sh
+
 python passwordManager.py -e passwords.txt
+```
+
+### Decrypt file
+
+```sh
+
+python passwordManager.py -d passwords.txt
+```
+
+⚠️ Result print in your prompt.
+
+### More information
+
+You can use:
+```
+python passwordManager.py -h
 ```
