@@ -2,7 +2,15 @@
 
 ## Installation
 
+### Installation python:
+
 You can file all documentation to install [Python](https://www.python.org/downloads/)
+
+### Installation packages:
+
+```sh
+pip install -r requirements.txt
+```
 
 ## Setup
 
