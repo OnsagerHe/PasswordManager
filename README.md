@@ -20,18 +20,25 @@ python passwordManager.py -g
 python passwordManager.py [OPTION] [FILE]
 ```
 
+
+### Graphical Mode
+
+```sh
+python passwordManager.py --graphical
+```
+
 ### Encrypt file
 
 ```sh
 
-python passwordManager.py -e passwords.txt
+python passwordManager.py -e passwords.txt -p privatekey.ecc
 ```
 
 ### Decrypt file
 
 ```sh
 
-python passwordManager.py -d passwords.txt
+python passwordManager.py -d passwords.txt -p privatekey.ecc
 ```
 
 ⚠️ Result print in your prompt.
