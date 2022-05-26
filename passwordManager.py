@@ -19,80 +19,37 @@ import pickle
 graphical_mode = False
 
 f_types = [('Text Document', '*.txt'),
-           ('Encrypt Files', '*.ecc'),]
-
-def open_file(filename):
-    try:
-        fob=open(filename,'r')
-    except:
-        exit("Can't not open file.")
-    return fob.read()
-
-def upload_file():
-    file = filedialog.askopenfilename(filetypes=f_types)
-    pb1 = Progressbar(
-            win, 
-            orient=HORIZONTAL, 
-            length=300, 
-            mode='determinate'
-            )
-    print(value)
-    pb1.grid(row=9, columnspan=3, pady=20)
-    #pb1.grid(row=5, columnspan=3, pady=20, anchor='center')
-    for i in range(5):
-        win.update_idletasks()
-        pb1['value'] += 20
-        time.sleep(0.5)
-    pb1.destroy()
-
-    result = ""
-    if value == "encrypt":
-        result =  open_file(file)
-    global filename
-    filename = file
-    if button_private_key_file['state'] == DISABLED:
-        button_private_key_file['state'] = NORMAL
-    Label(win, text="File Uploaded Successfully!", foreground='green').grid(row=9, columnspan=3, pady=10)
-    print(result)
-
-def upload_file_private_key():
-    file = filedialog.askopenfilename(filetypes=f_types)
-    pb1 = Progressbar(
-            win, 
-            orient=HORIZONTAL, 
-            length=300, 
-            mode='determinate'
-            )
-    #pb1.place(anchor='center', relx=0.5, rely=0.5)
-    pb1.grid(row=9, columnspan=3, pady=20)
-    for i in range(5):
-        win.update_idletasks()
-        pb1['value'] += 20
-        time.sleep(0.5)
-    pb1.destroy()
-    global filenamePrivateKey
-    filenamePrivateKey = file
-    Label(win, text="File Uploaded Successfully!", foreground='green').grid(row=9, columnspan=3, pady=10)
-    switch_validated_button()
+           ('Encrypt Files', '*.ecc'), ]
 
 filename = "passwords.txt"
 filenamePrivateKey = "privateKey.ecc"
 value = "--encrypt"
 
-def decrypt_value():
-    global value
-    value = "--decrypt"
-    if button_password_file['state'] == DISABLED:
-        button_password_file['state'] = NORMAL
-        
-def encrypt_value():
-    global value
-    value = "--encrypt"
-    if button_password_file['state'] == DISABLED:
-        button_password_file['state'] = NORMAL
+help_text = "Usage: python3 passwordManager.py [OPTION] [FILE]\n" \
+            "-d or --decrypt to decrypt passwords\n" \
+            "-e or --encrypt to encrypt passwords\n" \
+            "-g or --generate to generate private key\n" \
+            "-h or --help to display help\n" \
+            "-p or --private-key to set path of private key\n" \
+            "-v or --version to display version\n" \
+            "\nExample:\n\tpython3 passwordManager.py -e password.txt -p privateKey.ecc\n"
+
+help_show_info = ['Help',
+                  'Choose an option and a file to encrypt or decrypt\n'
+                  'Uplaod your private key file and click "valid"\n']
+
+
+def open_file(filename):
+    try:
+        fob = open(filename, 'r')
+    except:
+        exit("Can't not open file.")
+    return fob.read()
+
 
 class PasswordManager:
-    def __init__(self, password, pathFile = "passwords.txt", pathPrivateKey = "privateKey.ecc"):
+    def __init__(self, password, pathFile="passwords.txt",
+                 pathPrivateKey="privateKey.ecc"):
         self.pathFile = pathFile
         self.password = password.encode()
         self.curve = registry.get_curve('brainpoolP256r1')
@@ -119,7 +76,8 @@ class PasswordManager:
         ciphertextPrivKey = secrets.randbelow(self.curve.field.n)
         sharedECCKey = ciphertextPrivKey * self.pubKey
         secretKey = self.ecc_point_to_256_bit_key(sharedECCKey)
-        ciphertext, nonce, authTag = self.encrypt_AES_GCM(self.password, secretKey)
+        ciphertext, nonce, authTag = self.encrypt_AES_GCM(self.password,
+                                                          secretKey)
         ciphertextPubKey = ciphertextPrivKey * self.curve.g
         return (ciphertext, nonce, authTag, ciphertextPubKey)
 
@@ -181,34 +139,243 @@ class PasswordManager:
         except ValueError:
             exit("Impossible to decrypt, wrong private key ...")
         str = (decryptedMsg.decode('utf-8'))
-        print (str)
+        print(str)
         return str
 
-def main(cmd, pathFile, pathPrivateKey = ""):
+
+class MenuPasswordManager(Tk):
+    def __init__(self):
+        Tk.__init__(self)
+        menubar = MenuBar(self)
+        self.config(menu=menubar)
+        self.choice_encryption = self.initLabel('Choose Encrypt/Decrypt :')
+        self.draw_password_file = self.initLabel('Upload Password File :')
+        self.draw_private_key_file = self.initLabel('Upload Private Key File :')
+        self.result_validation = self.initLabel('Result Validation :')
+        self.button_encrypt = self.initButton("Encrypt", self.encrypt_value)
+        self.button_decrypt = self.initButton("Decrypt", self.decrypt_value)
+        self.button_password_file = self.initButton("Upload Password File",
+                                                    lambda: self.upload_file(),
+                                                    20, 'disable')
+        self.button_private_key_file = self.initButton("Upload Private Key",
+                                                       lambda: self.upload_file_private_key(),
+                                                       20, 'disable')
+        self.validate_button = self.initButton("Valid",
+                                               lambda: self.execute_program(),
+                                               20, 'disable')
+
+    def configWindow(self):
+        self.title('Password Manager')
+        self.geometry('500x750')
+        self.resizable(False, False)
+        self.config(background='#848482')
+        self.columnconfigure(1, weight=3)
+
+    def initLabel(self, text):
+        return tk.Label(self, text=text, font=('times', 13, 'bold'))
+
+    def initButton(self, text, command, width=0, state='normal'):
+        return tk.Button(self, text=text, command=command, width=width,
+                         state=state, activebackground='#8a2be2')
+
+    def geometry_manager_draw(self, name, row, ipadx=40, sticky='NWSE', padx=20,
+                              pady=10):
+        name.grid(row=row, column=1, sticky=sticky, padx=padx, ipadx=ipadx,
+                  pady=pady)
+
+    def init_geometry_manager(self):
+        self.geometry_manager_draw(self.choice_encryption, 1, 60)
+        self.geometry_manager_draw(self.button_encrypt, 2, ipadx=40, sticky='W',
+                                   padx=30)
+        self.geometry_manager_draw(self.button_decrypt, 2, ipadx=40, sticky='E',
+                                   padx=30)
+        self.geometry_manager_draw(self.draw_password_file, 3)
+        self.geometry_manager_draw(self.button_password_file, 4)
+        self.geometry_manager_draw(self.draw_private_key_file, 5)
+        self.geometry_manager_draw(self.button_private_key_file, 6)
+        self.geometry_manager_draw(self.result_validation, 7)
+        self.geometry_manager_draw(self.validate_button, 8)
+
+    def decrypt_value(self):
+        global value
+        value = "--decrypt"
+        if self.button_password_file['state'] == DISABLED:
+            self.button_password_file['state'] = NORMAL
+
+    def encrypt_value(self):
+        global value
+        value = "--encrypt"
+        if self.button_password_file['state'] == DISABLED:
+            self.button_password_file['state'] = NORMAL
+
+    def upload_file_private_key(self):
+        file = filedialog.askopenfilename(filetypes=f_types)
+        pb1 = Progressbar(
+            win,
+            orient=HORIZONTAL,
+            length=300,
+            mode='determinate'
+        )
+
+        pb1.grid(row=9, columnspan=3, pady=20)
+        for i in range(5):
+            win.update_idletasks()
+            pb1['value'] += 20
+            time.sleep(0.5)
+        pb1.destroy()
+        global filenamePrivateKey
+        filenamePrivateKey = file
+        Label(win, text="File Uploaded Successfully!", foreground='green').grid(
+            row=9, columnspan=3, pady=10)
+        self.switch_validated_button()
+
+    def upload_file(self):
+        file = filedialog.askopenfilename(filetypes=f_types)
+        pb1 = Progressbar(
+            win,
+            orient=HORIZONTAL,
+            length=300,
+            mode='determinate'
+        )
+        print(value)
+        pb1.grid(row=9, columnspan=3, pady=20)
+
+        for i in range(5):
+            win.update_idletasks()
+            pb1['value'] += 20
+            time.sleep(0.5)
+        pb1.destroy()
+
+        result = ""
+        if value == "encrypt":
+            result = open_file(file)
+        global filename
+        filename = file
+        if self.button_private_key_file['state'] == DISABLED:
+            self.button_private_key_file['state'] = NORMAL
+        Label(win, text="File Uploaded Successfully!", foreground='green').grid(
+            row=9, columnspan=3, pady=10)
+        print(result)
+
+    def switch_validated_button(self):
+        if self.validate_button["state"] == DISABLED:
+            self.validate_button["state"] = NORMAL
+
+    def clear_textbox(self, text_box):
+        text_box.delete(1.0, 'end')
+
+    def execute_program(self, ):
+        message = main(value, filename)
+        text_box = Text(
+            win,
+            height=10,
+            width=50
+        )
+
+        text_box.insert('end', message)
+        text_box.grid(row=9, columnspan=3, pady=10)
+        Button(
+            win,
+            text='Clear',
+            width=15,
+            command=lambda: self.clear_textbox(text_box)
+        ).grid(row=10, column=1, sticky='NWSE')
+
+
+class MenuBar(Menu):
+    def __init__(self, ws):
+        Menu.__init__(self, ws, background='#ff8000', foreground='black',
+                      activebackground='white', activeforeground='black')
+
+        file = Menu(self, tearoff=1, background='#ffcc99',
+                    foreground='black')
+        file.add_command(label="generate private key",
+                         command=lambda: self.generate_private_key_graphical())
+        file.add_command(label="Open")
+        file.add_command(label="Save")
+        file.add_command(label="Save as")
+        file.add_separator()
+        file.add_command(label="Exit", command=self.quit)
+        self.add_cascade(label="File", underline=0, menu=file)
+
+        edit = Menu(self, background='#ffcc99',
+                    foreground='black')
+        edit.add_command(label="Undo")
+        edit.add_separator()
+        edit.add_command(label="Cut")
+        edit.add_command(label="Copy")
+        edit.add_command(label="Paste")
+        self.add_cascade(label="Edit", menu=edit)
+
+        minimap = BooleanVar()
+        minimap.set(True)
+        darkmode = BooleanVar()
+        darkmode.set(False)
+
+        view = Menu(self, tearoff=0, background='#ffcc99',
+                    foreground='black')
+        ratio = Menu(self, tearoff=0, background='#ffcc99',
+                     foreground='black')
+
+        for aspected_ratio in ('4:3', '16:9'):
+            ratio.add_command(label=aspected_ratio)
+        view.add_cascade(label='Ratio', menu=ratio)
+        view.add_checkbutton(label="show minimap", onvalue=1, offvalue=0,
+                             variable=minimap)
+        view.add_checkbutton(label='Darkmode', onvalue=1, offvalue=0,
+                             variable=darkmode,
+                             command=lambda: self.darkMode(darkmode))
+        self.add_cascade(label='View', menu=view)
+
+        help = Menu(self, tearoff=1, background='#ffcc99', foreground='black')
+        help.add_command(label="About", command=help_information)
+        help.add_separator()
+        help.add_command(label="Version", command=help_version)
+        self.add_cascade(label="Help", menu=help)
+
+    def exit(self):
+        self.exit
+
+    def generate_private_key_graphical(self):
+        privateKey = secrets.randbelow(
+            registry.get_curve('brainpoolP256r1').field.n)
+        result = tk.messagebox.askquestion('Create Private key',
+                                           'Do you want replace privateKey.ecc ?')
+        if result == 'yes':
+            file = open("test.ecc", "w")
+            file.write(str(privateKey))
+            file.close()
+
+    def darkMode(self, darkmode):
+        if darkmode.get() == 1:
+            win.config(background='#ffcc99')
+        elif darkmode.get() == 0:
+            win.config(background='#848482')
+        else:
+            messagebox.showerror('PythonGuides', 'Something went wrong!')
+
+
+def main(cmd, pathFile, pathPrivateKey=""):
     encrypt = PasswordManager("", pathFile, pathPrivateKey)
     if "-e" == cmd or "--encrypt" == cmd:
         return encrypt.encryptPassword(pathFile)
     elif "-d" == cmd or "--decrypt" == cmd:
-       return  encrypt.decryptPasswords(pathFile)
+        return encrypt.decryptPasswords(pathFile)
     else:
         help()
         return 84
     print("Done!")
     return 0
 
+
 def help():
-    print("Usage: python3 passwordManager.py [OPTION] [FILE]\n")
-    print("-d or --decrypt to decrypt passwords")
-    print("-e or --encrypt to encrypt passwords")
-    print("-g or --generate to generate private key")
-    print("-h or --help to display help")
-    print("-p or --private-key to set path of private key")
-    print("-v or --version to display version")
-    print("\nExample:\n\tpython3 passwordManager.py -e password.txt -p privateKey.ecc\n")
+    print(help_text)
+
 
 def version():
     print("Version: 1.0 (Python 3.6.4)")
     print("Author: OnsagerHe")
+
 
 def generatePrivateKey():
     print("Generating a new private key...")
@@ -221,185 +388,42 @@ def generatePrivateKey():
     file.close()
     print("Private key save in privateKey.ecc file !")
 
-def generate_private_key_graphical():
-    privateKey = secrets.randbelow(
-        registry.get_curve('brainpoolP256r1').field.n)
-    result = tk.messagebox.askquestion('Create Private key',
-                                            'Do you want replace privateKey.ecc ?')
-    if result == 'yes':
-        file = open("test.ecc", "w")
-        file.write(str(privateKey))
-        file.close()
-
-def switch_validated_button():
-    if validate_button["state"] == DISABLED:
-        validate_button["state"] = NORMAL
-
-def clear_textbox(text_box):
-    text_box.delete(1.0, 'end')
-
-def execute_program():
-    message =  main(value, filename)
-    text_box = Text(
-        win,
-        height=10,
-        width=50
-    )
-
-    text_box.insert('end', message)
-    text_box.grid(row=9, columnspan=3, pady=10)
-    Button(
-        win,
-        text='Clear',
-        width=15,
-        command=lambda:clear_textbox(text_box)
-    ).grid(row=10, column=1,sticky='NWSE')
 
 def about():
     messagebox.showinfo('PythonGuides',
                         'Python Guides aims at providing best practical tutorials')
+
+
 def help_information():
-    messagebox.showinfo('Help',
-                        'Choose an option and a file to encrypt or decrypt\n'
-                        'Uplaod your private key file and click "valid"\n')
+    messagebox.showinfo(help_show_info[0], help_show_info[1])
+
 
 def help_version():
     messagebox.showinfo('Version',
-                        'Version: 2.0 (Python 3.6.4)\n'
+                        'Version: 2.1 (Python 3.6.4)\n'
                         'Author: OnsagerHe\n')
 
-def darkMode(darkmode):
-    if darkmode.get() == 1:
-        win.config(background='black')
-    elif darkmode.get() == 0:
-        win.config(background='#848482')
-    else:
-        messagebox.showerror('PythonGuides', 'Something went wrong!')
-
-def create_toolbar():
-
-    menubar = Menu(win, background='#ff8000', foreground='black',
-                   activebackground='white', activeforeground='black')
-    file = Menu(menubar, tearoff=1, background='#ffcc99', foreground='black')
-    file.add_command(label="generate private key", command=lambda: generate_private_key_graphical())
-    file.add_command(label="Open")
-    file.add_command(label="Save")
-    file.add_command(label="Save as")
-    file.add_separator()
-    file.add_command(label="Exit", command=win.quit)
-    menubar.add_cascade(label="File", menu=file)
-
-    edit = Menu(menubar, tearoff=0)
-    edit.add_command(label="Undo")
-    edit.add_separator()
-    edit.add_command(label="Cut", command=lambda: print("Cut"))
-    edit.add_command(label="Copy")
-    edit.add_command(label="Paste")
-    menubar.add_cascade(label="Edit", menu=edit)
-
-    minimap = BooleanVar()
-    minimap.set(True)
-    darkmode = BooleanVar()
-    darkmode.set(False)
-
-    view = Menu(menubar, tearoff=0)
-    view.add_checkbutton(label="show minimap", onvalue=1, offvalue=0,
-                         variable=minimap)
-    view.add_checkbutton(label='Darkmode', onvalue=1, offvalue=0,
-                         variable=darkmode, command=lambda:darkMode(darkmode))
-    menubar.add_cascade(label='View', menu=view)
-
-    help = Menu(menubar, tearoff=1, background='#ffcc99', foreground='black')
-    help.add_command(label="About", command=help_information)
-    help.add_separator()
-    help.add_command(label="Version", command=help_version)
-    menubar.add_cascade(label="Help", menu=help)
-
-    win.config(menu=menubar)
-
-    #Label(win, text=return_value, foreground='black').grid(row=9, columnspan=5, pady=10)
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:
         if sys.argv[1] == '--graphical':
             graphical_mode = True
-            # Create Window
-            win = tk.Tk()
-            # Set Window sizw
-            win.geometry("500x750")
-            # Color Window
-            # win.config(bg='#4fe3a5')
-            win.config(bg='#848482')
-            # Title Window
-            win.title('Password Manager')
-            # Set font text
-            my_font1 = ('times', 13, 'bold')
-            # win.columnconfigure(0, weight=1)
-            win.columnconfigure(1, weight=3)
-
-            # this represents what you have in the page above
-            button_encrypt = tk.Button(win, bd=1, text="Encrypt",
-                                       command=encrypt_value,
-                                       activebackground='#8a2be2')
-            button_decrypt = tk.Button(win, bd=1, text="Decrypt",
-                                       command=decrypt_value,
-                                       activebackground='#8a2be2')
-            # button_decrypt.place(x=400, y=0)
-            # button_encrypt.grid(row=0, column=0, sticky=tk.W)
-            button_password_file = tk.Button(win, text='Upload Password File',
-                                             width=20,
-                                             command=lambda: upload_file(),
-                                             state=DISABLED,
-                                             activebackground='#8a2be2')
-            button_private_key_file = tk.Button(win, text='Upload Private Key',
-                                                width=20,
-                                                command=lambda: upload_file_private_key(),
-                                                state=DISABLED,
-                                                activebackground='#8a2be2')
-            validate_button = tk.Button(win, text='Valid',
-                                        width=20, command=lambda: execute_program(),
-                                        state="disable", activebackground='#8a2be2')
-
-            choice_encryption = tk.Label(win, text='Choose Encrypt/Decrypt :',
-                                         font=my_font1)
-            draw_password_file = tk.Label(win, text='Upload Password File :',
-                                          font=my_font1)
-            draw_private_key_file = tk.Label(win, text='Upload Private Key :',
-                                             font=my_font1)
-            result_validation = tk.Label(win, text='Validation',
-                                         font=my_font1)
-            choice_encryption.grid(row=1, column=1, sticky='NWSE', padx=20,
-                                   ipadx=60, pady=10)
-            button_encrypt.grid(row=2, column=1, sticky='W', padx=30, ipadx=40,
-                                pady=10)
-            button_decrypt.grid(row=2, column=1, sticky='E', padx=30, ipadx=40)
-            draw_password_file.grid(row=3, column=1, sticky='NWSE', padx=20,
-                                    ipadx=40)
-            button_password_file.grid(row=4, column=1, sticky='NWSE', padx=20,
-                                      ipadx=40, pady=10)
-            draw_private_key_file.grid(row=5, column=1, sticky='NWSE', padx=20,
-                                       ipadx=40)
-            button_private_key_file.grid(row=6, column=1, sticky='NWSE', padx=20,
-                                         ipadx=40, pady=10)
-            result_validation.grid(row=7, column=1, sticky='NWSE', padx=20,
-                                   ipadx=40)
-            validate_button.grid(row=8, column=1, sticky='NWSE', padx=20, ipadx=40,
-                                 pady=10)
-            print(win.grid_size())
-
-            create_toolbar()
-            win.mainloop()  # Keep the window open
+            win = MenuPasswordManager()
+            win.configWindow()
+            win.init_geometry_manager()
+            win.mainloop()
         if (sys.argv[1] == "-h" or sys.argv[1] == "--help"):
             help()
         elif (sys.argv[1] == "-v" or sys.argv[1] == "--version"):
             version()
         elif (sys.argv[1] == "-g" or sys.argv[1] == "--generate"):
             generatePrivateKey()
+        else:
+            help()
     elif len(sys.argv) == 3:
         main(str(sys.argv[1]), str(sys.argv[2]))
     elif len(sys.argv) == 5:
         if sys.argv[3] == "-p" or sys.argv[3] == "--private-key":
             main(str(sys.argv[1]), str(sys.argv[2]), str(sys.argv[4]))
     else:
-       print("Usage: python3 passwordManager.py [OPTION] [FILE]")
-       print("\t-h or --help to display options")
+        help()
